@@ -39,129 +39,77 @@ DIV_COLORS = {"Chocolate": CHOC, "Sugar": "#B7791F", "Other": SLATE}
 ACTION_COLORS = {
     "Maintain": GREEN, "Repricing": AMBER, "Cost Renegotiation": NAVY, "Discontinuation Review": RED,
 }
-setattr(px.defaults, "color_discrete_sequence", SEQUENCE)
 
 st.set_page_config(page_title="Nassau Candy - Profitability", page_icon="🍬", layout="wide")
 
-THEME = "light"
-try:
-    _theme_type = st.context.theme.type
-    if _theme_type in {"light", "dark"}:
-        THEME = _theme_type
-except Exception:
-    pass
-
+# ----------------------------------------------------------------------------- theme
 LIGHT_THEME = {
-    "page": "#ffffff",
-    "card": "#ffffff",
-    "elevated": "#ffffff",
-    "interactive": "#f6f8fa",
-    "border": "#d0d7de",
-    "border_subtle": "#e3e8ee",
-    "text": "#1a2330",
-    "text_secondary": "#5b6573",
-    "text_tertiary": "#8a94a0",
-    "grid": "rgba(127,127,127,0.18)",
-    "shadow": "0 1px 2px rgba(0,0,0,.06), 0 1px 3px rgba(0,0,0,.05)",
-    "hover_bg": "#ffffff",
+    "page": "#ffffff", "card": "#f6f8fa", "elevated": "#ffffff",
+    "interactive": "#f6f8fa", "border": "#d0d7de", "border_subtle": "#e3e8ee",
+    "text": "#1a2330", "text_secondary": "#5b6573", "text_tertiary": "#8a94a0",
+    "grid": "rgba(127,127,127,0.18)", "shadow": "0 1px 2px rgba(0,0,0,.06), 0 1px 3px rgba(0,0,0,.05)",
 }
 DARK_THEME = {
-    "page": "#0d1117",
-    "card": "#161b22",
-    "elevated": "#1c2128",
-    "interactive": "#262c34",
-    "border": "#30363d",
-    "border_subtle": "#30363d",
-    "text": "#e6edf3",
-    "text_secondary": "#c9d1d9",
-    "text_tertiary": "#8b949e",
-    "grid": "rgba(255,255,255,0.14)",
-    "shadow": "none",
-    "hover_bg": "#1c2128",
+    "page": "#0d1117", "card": "#161b22", "elevated": "#1c2128",
+    "interactive": "#262c34", "border": "#30363d", "border_subtle": "#30363d",
+    "text": "#e6edf3", "text_secondary": "#c9d1d9", "text_tertiary": "#8b949e",
+    "grid": "rgba(255,255,255,0.14)", "shadow": "none",
 }
-TC = DARK_THEME if THEME == "dark" else LIGHT_THEME
 
-st.markdown(
-    f"""
+def current_theme() -> tuple[str, dict[str, str]]:
+    try:
+        theme = st.context.theme.type
+    except Exception:
+        theme = "light"
+    theme = theme if theme in ("light", "dark") else "light"
+    return theme, DARK_THEME if theme == "dark" else LIGHT_THEME
+
+THEME, TC = current_theme()
+
+st.markdown(f"""
 <style>
 :root {{
-  --surface-page: {TC['page']};
-  --surface-card: {TC['card']};
-  --surface-elevated: {TC['elevated']};
-  --surface-interactive: {TC['interactive']};
-  --border-default: {TC['border']};
-  --border-subtle: {TC['border_subtle']};
-  --text-primary: {TC['text']};
-  --text-secondary: {TC['text_secondary']};
-  --text-tertiary: {TC['text_tertiary']};
-  --shadow-card: {TC['shadow']};
-  --plot-grid: {TC['grid']};
+  --surface-page: {TC['page']}; --surface-card: {TC['card']}; --surface-elevated: {TC['elevated']};
+  --surface-interactive: {TC['interactive']}; --border-default: {TC['border']}; --border-subtle: {TC['border_subtle']};
+  --text-primary: {TC['text']}; --text-secondary: {TC['text_secondary']}; --text-tertiary: {TC['text_tertiary']};
+  --shadow-card: {TC['shadow']}; --plot-grid: {TC['grid']};
 }}
 
-footer {{visibility: hidden;}}
-.block-container {{padding-top: 1.2rem; max-width: 1350px;}}
-
-.app-header {{
-  padding: 0.5rem 0 0.25rem;
-  border-bottom: 1px solid var(--border-default);
-  margin-bottom: 1rem;
-  background: var(--surface-page);
+html, body, [data-testid="stAppViewContainer"], [data-testid="stAppViewContainer"] > section {{
+  background: var(--surface-page) !important; color: var(--text-primary) !important;
 }}
-.app-header h1 {{
-  font-size: 1.35rem; font-weight: 700; color: var(--text-primary);
-  margin: 0; letter-spacing: -0.02em;
-}}
-.app-header p {{font-size: 0.82rem; color: var(--text-secondary); margin: 0.15rem 0 0;}}
-
-.kpi {{
-  background: var(--surface-elevated);
-  border: 1px solid var(--border-default);
-  border-top: 3px solid var(--c);
-  padding: 0.6rem 0.8rem; border-radius: 8px;
-  box-shadow: var(--shadow-card);
-}}
-.kpi .l {{font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-secondary);}}
-.kpi .v {{font-size: 1.2rem; font-weight: 600; color: var(--text-primary); line-height: 1.2;}}
-.kpi .s {{font-size: 0.7rem; color: var(--text-tertiary);}}
-
-.insight {{
-  background: var(--surface-elevated); border-left: 3px solid var(--c);
-  padding: 0.55rem 0.75rem; font-size: 0.8rem; color: var(--text-primary);
-  border-radius: 8px; border-top: 1px solid var(--border-subtle);
-  border-right: 1px solid var(--border-subtle); border-bottom: 1px solid var(--border-subtle);
-}}
-.insight b {{color: var(--c);}}
-.section {{font-size: 0.95rem; font-weight: 600; color: var(--text-primary); margin: 1.2rem 0 0.4rem;}}
-
-.stTabs [data-baseweb="tab-list"] {{gap: 0; border-bottom: 2px solid var(--border-default);}}
-.stTabs [data-baseweb="tab"] {{
-  background: transparent; border-radius: 0; padding: 8px 14px;
-  border-bottom: 2px solid transparent; margin-bottom: -2px; color: var(--text-secondary);
-}}
-.stTabs [aria-selected="true"] {{border-bottom-color: #1E3A5F !important; background: transparent;}}
-.stTabs [aria-selected="true"] p {{color: var(--text-primary) !important; font-weight: 600;}}
-
-[data-testid="stSidebar"] {{border-right: 1px solid var(--border-default);}}
-[data-testid="stSidebar"] .stMarkdown h2 {{font-size: 1rem; color: var(--text-primary);}}
-
-input, textarea, select {{background: var(--surface-elevated); color: var(--text-primary); border: 1px solid var(--border-default);}}
-input::placeholder, textarea::placeholder {{color: var(--text-tertiary);}}
-
-@media (max-width: 768px) {{
-  .block-container {{padding-left: 0.5rem; padding-right: 0.5rem;}}
-  .kpi {{padding: 0.5rem 0.6rem;}}
-  .kpi .v {{font-size: 1rem;}}
-}}
+footer {{visibility:hidden;}}
+.block-container {{padding-top:1.2rem; max-width:1350px;}}
+.app-header {{padding:.5rem 0 .25rem; border-bottom:1px solid var(--border-default); margin-bottom:1rem; background:var(--surface-page);}}
+.app-header h1 {{font-size:1.35rem; font-weight:700; color:var(--text-primary) !important; margin:0; letter-spacing:-.02em;}}
+.app-header p {{font-size:.82rem; color:var(--text-secondary) !important; margin:.15rem 0 0;}}
+.kpi {{background:var(--surface-elevated); border:1px solid var(--border-default); border-top:3px solid var(--c); padding:.6rem .8rem; border-radius:8px; box-shadow:var(--shadow-card);}}
+.kpi .l {{font-size:.68rem; text-transform:uppercase; letter-spacing:.06em; color:var(--text-secondary) !important;}}
+.kpi .v {{font-size:1.2rem; font-weight:600; color:var(--text-primary) !important; line-height:1.2;}}
+.kpi .s {{font-size:.7rem; color:var(--text-tertiary) !important;}}
+.insight {{background:var(--surface-elevated); border-left:3px solid var(--c); padding:.55rem .75rem; font-size:.8rem; color:var(--text-primary) !important; border-radius:8px; border:1px solid var(--border-subtle);}}
+.insight b {{color:var(--c) !important;}}
+.section {{font-size:.95rem; font-weight:600; color:var(--text-primary) !important; margin:1.2rem 0 .4rem;}}
+.stTabs [data-baseweb="tab-list"] {{gap:0; border-bottom:2px solid var(--border-default) !important; background:var(--surface-page) !important;}}
+.stTabs [data-baseweb="tab"] {{background:var(--surface-page) !important; border-radius:0; padding:8px 14px; border-bottom:2px solid transparent; margin-bottom:-2px; color:var(--text-secondary) !important;}}
+.stTabs [data-baseweb="tab"] p, .stTabs [data-baseweb="tab"] span {{color:var(--text-secondary) !important;}}
+.stTabs [data-baseweb="tab"]:hover {{background:var(--surface-interactive) !important; color:var(--text-primary) !important;}}
+.stTabs [aria-selected="true"] {{border-bottom-color:{NAVY} !important; background:var(--surface-page) !important;}}
+.stTabs [aria-selected="true"] p, .stTabs [aria-selected="true"] span {{color:var(--text-primary) !important; font-weight:600;}}
+[data-testid="stSidebar"] {{background:var(--surface-page) !important; border-right:1px solid var(--border-default) !important;}}
+[data-testid="stSidebar"] .stMarkdown h2 {{font-size:1rem; color:var(--text-primary) !important;}}
+[data-testid="stSidebar"] [data-testid="stCaptionContainer"] p {{color:var(--text-secondary) !important;}}
+input, textarea, select, [data-baseweb="select"] > div, [data-baseweb="input"] > div {{background:var(--surface-elevated) !important; color:var(--text-primary) !important; border-color:var(--border-default) !important;}}
+input::placeholder, textarea::placeholder {{color:var(--text-tertiary) !important;}}
+[data-baseweb="select"] *, [data-baseweb="input"] * {{color:var(--text-primary) !important;}}
+[data-testid="stDownloadButton"] button {{background:var(--surface-elevated) !important; color:var(--text-primary) !important; border-color:var(--border-default) !important;}}
+button {{color:var(--text-primary);}}
+@media(max-width:768px) {{.block-container {{padding-left:.5rem; padding-right:.5rem;}} .kpi {{padding:.5rem .6rem;}} .kpi .v {{font-size:1rem;}}}}
 </style>
-""",
-    unsafe_allow_html=True,
-)
+""", unsafe_allow_html=True)
 
-
-# --- version-safe layout helpers: newer Streamlit uses width="stretch", older uses use_container_width
 _PLOTLY_HAS_WIDTH = "width" in inspect.signature(st.plotly_chart).parameters
 _DF_HAS_WIDTH = "width" in inspect.signature(st.dataframe).parameters
-
 
 def table_show(data, **kwargs) -> None:
     if _DF_HAS_WIDTH:
@@ -169,56 +117,28 @@ def table_show(data, **kwargs) -> None:
     else:
         st.dataframe(data, use_container_width=True, **kwargs)
 
-
 def kpi(label: str, value: str, sub: str, color: str) -> str:
     return f'<div class="kpi" style="--c:{color}"><div class="l">{label}</div><div class="v">{value}</div><div class="s">{sub}</div></div>'
 
-
-def insight(html: str, color: str, heading_color: str | None = None) -> str:
-    if heading_color:
-        html = html.replace("<b>", f'<b style="color:{heading_color}">', 1)
+def insight(html: str, color: str) -> str:
     return f'<div class="insight" style="--c:{color}">{html}</div>'
-
 
 def section(title: str) -> None:
     st.markdown(f'<div class="section">{title}</div>', unsafe_allow_html=True)
 
-
 def show(fig, height: int | None = None) -> None:
-    """Render Plotly with theme-aware layout. Theme is read once per Streamlit run."""
+    is_dark = THEME == "dark"
     text_color = TC["text"]
-    secondary = TC["text_secondary"]
-    grid_color = TC["grid"]
-    hover_bg = TC["hover_bg"]
-
     fig.update_layout(
-        paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="rgba(0,0,0,0)",
+        template="plotly_dark" if is_dark else "plotly_white",
+        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
         font=dict(family="Inter, Helvetica, Arial, sans-serif", size=13, color=text_color),
         margin=dict(l=10, r=10, t=30, b=10),
-        legend=dict(
-            orientation="h", yanchor="bottom", y=1.02,
-            xanchor="left", x=0, title_text="",
-            font=dict(color=secondary),
-        ),
-        hoverlabel=dict(
-            bgcolor=hover_bg,
-            bordercolor=TC["border"],
-            font=dict(color=text_color),
-        ),
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0, title_text="", font=dict(color=text_color)),
+        hoverlabel=dict(bgcolor=TC["elevated"], bordercolor=TC["border"], font=dict(color=text_color)),
     )
-    fig.update_xaxes(
-        gridcolor=grid_color, zeroline=False,
-        tickfont=dict(color=secondary),
-        title_font=dict(color=text_color),
-        linecolor=TC["border"],
-    )
-    fig.update_yaxes(
-        gridcolor=grid_color, zeroline=False,
-        tickfont=dict(color=secondary),
-        title_font=dict(color=text_color),
-        linecolor=TC["border"],
-    )
+    fig.update_xaxes(gridcolor=TC["grid"], zeroline=False, tickfont=dict(color=TC["text_secondary"]), title_font=dict(color=text_color), linecolor=TC["border"])
+    fig.update_yaxes(gridcolor=TC["grid"], zeroline=False, tickfont=dict(color=TC["text_secondary"]), title_font=dict(color=text_color), linecolor=TC["border"])
     if height:
         fig.update_layout(height=height)
     if _PLOTLY_HAS_WIDTH:
@@ -370,7 +290,7 @@ weak = products.loc[products["margin_pct"].idxmin()]
 n_review = int((products["action_needed"] != "Maintain").sum())
 st.write("")
 i = st.columns(4)
-i[0].markdown(insight(f"<b>Top earner</b><br>{top['Product Name']} - {money(top['gross_profit'])} profit ({top['profit_contrib_pct']:.1f}% of total)", NAVY, "#60A5FA" if THEME == "dark" else NAVY), unsafe_allow_html=True)
+i[0].markdown(insight(f"<b>Top earner</b><br>{top['Product Name']} - {money(top['gross_profit'])} profit ({top['profit_contrib_pct']:.1f}% of total)", NAVY), unsafe_allow_html=True)
 i[1].markdown(insight(f"<b>Weakest margin</b><br>{weak['Product Name']} at {weak['margin_pct']:.1f}% gross margin", RED), unsafe_allow_html=True)
 i[2].markdown(insight(f"<b>Concentration</b><br>{n_prof} of {len(products)} products deliver 80% of profit", TEAL), unsafe_allow_html=True)
 i[3].markdown(insight(f"<b>Needs attention</b><br>{n_review} products flagged for repricing, cost review or discontinuation", AMBER), unsafe_allow_html=True)
